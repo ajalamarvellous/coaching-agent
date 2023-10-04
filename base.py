@@ -9,16 +9,18 @@ calories = {
     "lunges": 2.3,
     }
 
-def merge_targets(distribution, n_iterations=2):
+def merge_targets(distribution, n_iterations=2, remove_tail=False, tail_min=10):
     """
     Merge a number of workout targets to get a smaller number of workouts
     """
-    print(distribution)
     new_distribution = []
     for i in range(n_iterations):
-        new_distribution.append(distribution[0] + distribution[1])
-        distribution.pop(0), distribution.pop(0)
-    if len(distribution) > 0:
+        if len(distribution) > 1:
+            new_distribution.append(distribution[0] + distribution[1])
+            distribution.pop(0), distribution.pop(0)
+    if len(distribution) > 0 and remove_tail:
+        new_distribution[-1] += distribution[0]
+    elif len(distribution) > 0:
         new_distribution.extend(distribution)
     return new_distribution
 
@@ -70,8 +72,11 @@ def get_workout_info(workout, target, weight):
     number_per_rep = [reps_and_no_factor[1] for i in range(reps_and_no_factor[0])]
     # if the no of reps is more than 4 and the no cycles is less than 15
     # merge to get smaller number of workouts
-    if (len(number_per_rep) >= 4) or (number_per_rep[1] < 15) :
-        number_per_rep = merge_targets(number_per_rep)
+    if (len(number_per_rep) >= 5) or (number_per_rep[1] < 15):
+        number_per_rep = merge_targets(
+            number_per_rep, 
+            n_iterations=int(len(number_per_rep)/2 + 1), 
+            remove_tail=True)
     return {
         "Original target MET": target,
         "Calories": calorie_per_workout,
@@ -108,11 +113,6 @@ def main():
     print("You can do the following workouts: ", selected_workouts)
     for i in range(len(selected_workouts)):
         complete_info[selected_workouts[i]] = get_workout_info(selected_workouts[i], target_distribution[i], weight)
-        # complete_info[selected_workouts[i]] ={
-        #     "Target MET": workout_distribution[i],
-        #     "Calories": calories[selected_workouts[i]] * (weight/80),
-        #     "reps_count": get_reps_count(complete_info, selected_workouts[i])
-        # }
     print(complete_info)
 
 
